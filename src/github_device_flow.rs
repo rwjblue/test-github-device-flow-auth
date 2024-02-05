@@ -17,7 +17,7 @@ use std::{thread, time::Duration};
 const GITHUB_DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
 const GITHUB_TOKEN_SCOPE: &str = "repo";
-const CLIENT_ID: &str = "Iv1.d2cfa8999c68b819"; // Replace with your GitHub App's client ID
+const CLIENT_ID: &str = "Iv1.d2cfa8999c68b819";
 
 #[derive(Debug, serde::Deserialize)]
 struct DeviceCodeResponse {
@@ -77,7 +77,7 @@ pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
     log::info!("Attempting to request device code");
     // Request a device code
     let response = attohttpc::post(GITHUB_DEVICE_CODE_URL)
-        .header("Accept", "application/json)")
+        .header("Accept", "application/json")
         .form(&DeviceCodeRequest {
             client_id: CLIENT_ID.to_string(),
             scope: GITHUB_TOKEN_SCOPE.to_string(),
@@ -123,7 +123,7 @@ fn poll_for_token(
             device_code_response.device_code.clone()
         );
         let poll_response = attohttpc::post(GITHUB_TOKEN_URL)
-            .header("Accept", "application/json)")
+            .header("Accept", "application/json")
             .form(&TokenPollRequest {
                 client_id: CLIENT_ID.to_string(),
                 device_code: device_code_response.device_code.clone(),
