@@ -77,7 +77,7 @@ pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
     log::info!("Attempting to request device code");
     // Request a device code
     let response = attohttpc::post(GITHUB_DEVICE_CODE_URL)
-        .header("Accept", "application/json")
+        .header("Accept", "application/vnd.github+json)")
         .form(&DeviceCodeRequest {
             client_id: CLIENT_ID.to_string(),
             scope: GITHUB_TOKEN_SCOPE.to_string(),
@@ -124,7 +124,7 @@ fn poll_for_token(
             device_code_response.device_code.clone()
         );
         let poll_response = attohttpc::post(GITHUB_TOKEN_URL)
-            .header("Accept", "application/json")
+            .header("Accept", "application/vnd.github+json)")
             .form(&TokenPollRequest {
                 client_id: CLIENT_ID.to_string(),
                 device_code: device_code_response.device_code.clone(),

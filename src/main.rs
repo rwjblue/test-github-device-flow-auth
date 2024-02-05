@@ -56,6 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = attohttpc::get(url)
         .header("Authorization", format!("token {}", token))
         .header("User-Agent", "test-github-device-flow/0.1.0")
+        .header("Accept", "application/vnd.github+json)")
         .send()?;
 
     if response.status() == StatusCode::OK {
