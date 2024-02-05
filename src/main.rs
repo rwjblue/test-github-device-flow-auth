@@ -21,6 +21,8 @@ struct Args {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
     let args = Args::parse();
 
     // Splitting the 'org/repo' argument into separate variables
@@ -53,7 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let url = format!("https://api.github.com/repos/{}/{}/zipball", owner, repo);
     let response = attohttpc::get(url)
         .header("Authorization", format!("token {}", token))
-        .header("User-Agent", "github_downloader")
+        .header("User-Agent", "test-github-device-flow/0.1.0")
         .send()?;
 
     if response.status() == StatusCode::OK {

@@ -16,9 +16,10 @@ use std::{thread, time::Duration};
 
 const GITHUB_DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
-const CLIENT_ID: &str = "your_client_id_here"; // Replace with your GitHub App's client ID
+const GITHUB_TOKEN_SCOPE: &str = "repo";
+const CLIENT_ID: &str = "Iv1.d2cfa8999c68b819"; // Replace with your GitHub App's client ID
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 struct DeviceCodeResponse {
     device_code: String,
     user_code: String,
@@ -27,19 +28,19 @@ struct DeviceCodeResponse {
     interval: u64,
 }
 
-#[derive(serde::Serialize)]
+#[derive(Debug, serde::Serialize)]
 struct DeviceCodeRequest {
     client_id: String,
     scope: String,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 struct TokenPollResponse {
     access_token: Option<String>,
     error: Option<String>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(Debug, serde::Serialize)]
 struct TokenPollRequest {
     client_id: String,
     device_code: String,
@@ -73,12 +74,13 @@ struct TokenPollRequest {
 /// }
 /// ```
 pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
+    log::info!("Attempting to request device code");
     // Request a device code
     let response = attohttpc::post(GITHUB_DEVICE_CODE_URL)
         .header("Accept", "application/json")
         .form(&DeviceCodeRequest {
             client_id: CLIENT_ID.to_string(),
-            scope: "repo".to_string(),
+            scope: GITHUB_TOKEN_SCOPE.to_string(),
         })?
         .send()?;
 
@@ -87,6 +89,7 @@ pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
     }
 
     let device_code_response: DeviceCodeResponse = response.json()?;
+    log::info!("DeviceCodeResponse: {:?}", device_code_response);
 
     println!("Open the following URL in your browser and enter the code:");
     println!("{}", device_code_response.verification_uri);
@@ -115,6 +118,11 @@ fn poll_for_token(
             return Err("Token request timed out".into());
         }
 
+        log::info!(
+            "Pinging {} to checkout on device code {}",
+            GITHUB_TOKEN_URL,
+            device_code_response.device_code.clone()
+        );
         let poll_response = attohttpc::post(GITHUB_TOKEN_URL)
             .header("Accept", "application/json")
             .form(&TokenPollRequest {
@@ -126,6 +134,8 @@ fn poll_for_token(
 
         if poll_response.status() == StatusCode::OK {
             let token_response: TokenPollResponse = poll_response.json()?;
+            log::info!("TokenPollResponse: {:?}", token_response);
+
             if let Some(access_token) = token_response.access_token {
                 return Ok(access_token);
             }
