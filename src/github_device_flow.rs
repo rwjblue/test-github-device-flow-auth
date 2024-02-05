@@ -98,6 +98,12 @@ pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
         eprintln!("Failed to open web browser. Please manually open the URL.");
     }
 
+    poll_for_token(device_code_response)
+}
+
+fn poll_for_token(
+    device_code_response: DeviceCodeResponse,
+) -> Result<String, Box<dyn std::error::Error>> {
     // Poll the endpoint for the access token
     let poll_interval = Duration::from_secs(device_code_response.interval);
     let expires_in = Duration::from_secs(device_code_response.expires_in);
@@ -125,8 +131,15 @@ pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
             match token_response.error {
                 Some(ref error) if error == "authorization_pending" => {
                     // this is normal, not _really_ an error condition
+                    thread::sleep(poll_interval);
                 }
-                // TODO: handle other errors, specifically slow_down
+                Some(ref error) if error == "slow_down" => {
+                    thread::sleep(poll_interval + Duration::from_secs(5))
+                }
+                Some(ref error) if error == "expired_token" => {
+                    return Err("Device token expired, please re-run to try again".into());
+                }
+
                 Some(error) => {
                     return Err(format!("Failed to get token: {}", error).into());
                 }
@@ -137,7 +150,5 @@ pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
         } else {
             return Err("Failed to poll for token".into());
         }
-
-        thread::sleep(poll_interval);
     }
 }
