@@ -92,9 +92,8 @@ pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
     log::info!("DeviceCodeResponse: {:?}", device_code_response);
 
     println!("Open the following URL in your browser and enter the code:");
-    println!("{}", device_code_response.verification_uri);
     println!("Code: {}", device_code_response.user_code);
-    println!("Press Enter after you have authorized...");
+    println!("Press Enter once you have copied the code above...");
     let mut input = String::new();
     std::io::stdin().read_line(&mut input)?;
 
