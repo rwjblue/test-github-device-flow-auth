@@ -1,9 +1,8 @@
-use attohttpc::{header, Method, RequestBuilder, StatusCode};
+use attohttpc::StatusCode;
 use clap::Parser;
-use dialoguer::{Confirm, Input};
 use is_terminal::IsTerminal;
-use serde_json::Value;
-use std::env;
+use std::fs::File;
+use std::io::Write;
 
 mod github_device_flow;
 use github_device_flow::get_github_token;
@@ -58,9 +57,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .send()?;
 
     if response.status() == StatusCode::OK {
-        // Handle successful download, e.g., save to a file
+        let content = response.bytes()?;
+        let mut file = File::create("downloaded_repo.zip")?;
+        file.write_all(&content)?;
+
+        println!("Repository zip file has been saved as downloaded_repo.zip.");
     } else {
-        // Handle errors
+        // If the status code indicates an error, print the status code and error message
+        let error_message = format!(
+            "Failed to download repository: HTTP Status {}",
+            response.status()
+        );
+        eprintln!("{}", error_message);
     }
 
     Ok(())

@@ -1,7 +1,5 @@
-use attohttpc::{header, Method, RequestBuilder, StatusCode};
-use serde_json::Value;
+use attohttpc::StatusCode;
 use std::{thread, time::Duration};
-use webbrowser;
 
 const GITHUB_DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
