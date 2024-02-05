@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Example: Downloading source code, adjust the URL to your needs
-    let url = format!("https://api.github.com/repos/{}/{}/zipball", owner, repo);
+    let url = format!("https://api.github.com/repos/{}/{}/tarball", owner, repo);
     let response = attohttpc::get(url)
         .header("Authorization", format!("token {}", token))
         .header("User-Agent", "test-github-device-flow/0.1.0")
@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if response.status() == StatusCode::OK {
         let content = response.bytes()?;
-        let mut file = File::create("downloaded_repo.zip")?;
+        let mut file = File::create("downloaded_repo.tar.gz")?;
         file.write_all(&content)?;
 
         println!("Repository zip file has been saved as downloaded_repo.zip.");
