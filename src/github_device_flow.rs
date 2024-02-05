@@ -75,6 +75,7 @@ struct TokenPollRequest {
 pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
     // Request a device code
     let response = attohttpc::post(GITHUB_DEVICE_CODE_URL)
+        .header("Accept", "application/json")
         .form(&DeviceCodeRequest {
             client_id: CLIENT_ID.to_string(),
             scope: "repo".to_string(),
@@ -115,6 +116,7 @@ fn poll_for_token(
         }
 
         let poll_response = attohttpc::post(GITHUB_TOKEN_URL)
+            .header("Accept", "application/json")
             .form(&TokenPollRequest {
                 client_id: CLIENT_ID.to_string(),
                 device_code: device_code_response.device_code.clone(),
