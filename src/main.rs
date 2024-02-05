@@ -51,6 +51,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     };
 
+    log::info!("Token to use: {}", token);
+
     // Example: Downloading source code, adjust the URL to your needs
     let url = format!("https://api.github.com/repos/{}/{}/tarball", owner, repo);
     let response = attohttpc::get(url)
@@ -64,7 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut file = File::create("downloaded_repo.tar.gz")?;
         file.write_all(&content)?;
 
-        println!("Repository zip file has been saved as downloaded_repo.zip.");
+        println!("Repository zip file has been saved as downloaded_repo.tar.gz.");
     } else {
         // If the status code indicates an error, print the status code and error message
         let error_message = format!(
