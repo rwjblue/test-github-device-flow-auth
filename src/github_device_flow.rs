@@ -1,3 +1,16 @@
+//! The `github_device_flow` module provides functionality to authenticate a user via GitHub's device flow.
+//! This includes requesting a device code, prompting the user to authorize the application, and polling
+//! GitHub for an access token.
+//!
+//! This module abstracts the complexities involved in the device flow process and provides a simple
+//! interface for obtaining an access token, which can then be used for making authenticated requests to
+//! the GitHub API.
+//!
+//! References:
+//! - [GitHub Device Flow](https://docs.github.com/en/developers/apps/authorizing-oauth-apps#device-flow)
+//! - [Building a CLI with a GitHub App](https://docs.github.com/en/apps/creating-github-apps/writing-code-for-a-github-app/building-a-cli-with-a-github-app)
+//!
+
 use attohttpc::StatusCode;
 use std::{thread, time::Duration};
 
@@ -33,6 +46,32 @@ struct TokenPollRequest {
     grant_type: String,
 }
 
+/// Initiates the GitHub device flow to obtain an access token.
+///
+/// This function first requests a device code and instructs the user to authorize the application.
+/// After the user has authorized the application by entering the code on GitHub's website,
+/// it polls GitHub for an access token at regular intervals as specified by GitHub.
+///
+/// # Errors
+///
+/// This function will return an error if any step of the device flow fails, including network errors,
+/// errors from GitHub, or if the polling times out.
+///
+/// # Returns
+///
+/// On success, returns the access token as a `String`.
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```no_run
+/// fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let token = github_device_flow::get_github_token();
+///     println!("Access token: {}", token);
+///     Ok(())
+/// }
+/// ```
 pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
     // Request a device code
     let response = attohttpc::post(GITHUB_DEVICE_CODE_URL)
