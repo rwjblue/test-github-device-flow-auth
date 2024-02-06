@@ -15,6 +15,8 @@ use attohttpc::StatusCode;
 use keyring::Entry;
 use std::{thread, time::Duration};
 
+use crate::errors::DeviceFlowError;
+
 const GITHUB_DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
 const GITHUB_TOKEN_SCOPE: &str = "repo";
@@ -74,7 +76,7 @@ struct TokenPollRequest {
 ///     Ok(())
 /// }
 /// ```
-pub fn create_github_token() -> Result<String, Box<dyn std::error::Error>> {
+pub fn create_github_token() -> Result<String, DeviceFlowError> {
     log::info!("Attempting to request device code");
     // Request a device code
     let response = attohttpc::post(GITHUB_DEVICE_CODE_URL)
@@ -86,7 +88,10 @@ pub fn create_github_token() -> Result<String, Box<dyn std::error::Error>> {
         .send()?;
 
     if response.status() != StatusCode::OK {
-        return Err(format!("Failed to get device code. Status: {:?}", response.status()).into());
+        return Err(DeviceFlowError::Other(format!(
+            "Failed to get device code. Status: {:?}",
+            response.status()
+        )));
     }
 
     let device_code_response: DeviceCodeResponse = response.json()?;
@@ -102,12 +107,12 @@ pub fn create_github_token() -> Result<String, Box<dyn std::error::Error>> {
         eprintln!("Failed to open web browser. Please manually open the URL.");
     }
 
-    poll_for_token(device_code_response)
+    let token = poll_for_token(device_code_response)?;
+
+    save_token(token)
 }
 
-fn poll_for_token(
-    device_code_response: DeviceCodeResponse,
-) -> Result<String, Box<dyn std::error::Error>> {
+fn poll_for_token(device_code_response: DeviceCodeResponse) -> Result<String, DeviceFlowError> {
     // Poll the endpoint for the access token
     let poll_interval = Duration::from_secs(device_code_response.interval);
     let expires_in = Duration::from_secs(device_code_response.expires_in);
@@ -115,7 +120,7 @@ fn poll_for_token(
 
     loop {
         if start_time.elapsed() > expires_in {
-            return Err("Token request timed out".into());
+            return Err(DeviceFlowError::Other("Token request timed out".into()));
         }
 
         log::info!(
@@ -149,40 +154,41 @@ fn poll_for_token(
                     thread::sleep(poll_interval + Duration::from_secs(5))
                 }
                 Some(ref error) if error == "expired_token" => {
-                    return Err("Device token expired, please re-run to try again".into());
+                    return Err(DeviceFlowError::Other(
+                        "Device token expired, please re-run to try again".into(),
+                    ));
                 }
 
                 Some(error) => {
                     return Err(format!("Failed to get token: {}", error).into());
                 }
                 None => {
-                    return Err("Failed to get token".into());
+                    return Err(DeviceFlowError::Other("Failed to get token".into()));
                 }
             }
         } else {
-            return Err("Failed to poll for token".into());
+            return Err(DeviceFlowError::Other("Failed to poll for token".into()));
         }
     }
 }
 
-pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
+pub fn get_github_token() -> Result<String, DeviceFlowError> {
     let service = "test-github-device-flow";
     let username = "github_token";
     let entry = Entry::new(service, username)?;
 
-    if let Some(token) = entry.get_password()? {
-        return Ok(token);
+    match entry.get_password() {
+        Ok(token) => Ok(token),
+        _ => create_github_token(),
     }
-
-    create_github_token()?;
 }
 
-pub fn save_token(token: String) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_token(token: String) -> Result<String, DeviceFlowError> {
     let service = "test-github-device-flow";
     let username = "github_token";
     let entry = Entry::new(service, username)?;
 
     entry.set_password(&token)?;
 
-    Ok(())
+    Ok(token)
 }

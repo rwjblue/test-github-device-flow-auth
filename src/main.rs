@@ -4,7 +4,9 @@ use is_terminal::IsTerminal;
 use std::fs::File;
 use std::io::Write;
 
+mod errors;
 mod github_device_flow;
+use errors::DeviceFlowError;
 use github_device_flow::get_github_token;
 
 /// Downloads source code from a specified GitHub repository.
@@ -20,7 +22,7 @@ struct Args {
     token: Option<String>,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), DeviceFlowError> {
     env_logger::init();
 
     let args = Args::parse();
@@ -29,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let parts: Vec<&str> = args.repo.split('/').collect();
     if parts.len() != 2 {
         eprintln!("The repo argument must be in the format 'org/repo'");
-        return Err("Invalid repo format".into());
+        return Err(DeviceFlowError::Other("Invalid repo format".into()));
     }
     let (owner, repo) = (parts[0], parts[1]);
 
