@@ -12,6 +12,7 @@
 //!
 
 use attohttpc::StatusCode;
+use keyring::Entry;
 use std::{thread, time::Duration};
 
 const GITHUB_DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
@@ -73,7 +74,7 @@ struct TokenPollRequest {
 ///     Ok(())
 /// }
 /// ```
-pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
+pub fn create_github_token() -> Result<String, Box<dyn std::error::Error>> {
     log::info!("Attempting to request device code");
     // Request a device code
     let response = attohttpc::post(GITHUB_DEVICE_CODE_URL)
@@ -162,4 +163,26 @@ fn poll_for_token(
             return Err("Failed to poll for token".into());
         }
     }
+}
+
+pub fn get_github_token() -> Result<String, Box<dyn std::error::Error>> {
+    let service = "test-github-device-flow";
+    let username = "github_token";
+    let entry = Entry::new(service, username)?;
+
+    if let Some(token) = entry.get_password()? {
+        return Ok(token);
+    }
+
+    create_github_token()?;
+}
+
+pub fn save_token(token: String) -> Result<(), Box<dyn std::error::Error>> {
+    let service = "test-github-device-flow";
+    let username = "github_token";
+    let entry = Entry::new(service, username)?;
+
+    entry.set_password(&token)?;
+
+    Ok(())
 }
