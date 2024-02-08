@@ -70,12 +70,30 @@ fn main() -> Result<(), DeviceFlowError> {
 
         println!("Repository zip file has been saved as downloaded_repo.tar.gz.");
     } else {
-        // If the status code indicates an error, print the status code and error message
+        // If the status code indicates an error, print the status code, error message, headers, and body
+        let status_code = response.status();
+        let headers = response
+            .headers()
+            .iter()
+            .map(|(k, v)| format!("\t{}: {:?}", k, v))
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        // Attempt to read the response body. Note: This consumes the response.
+        let body = response
+            .text()
+            .unwrap_or_else(|_| "Failed to read body".into());
+
         let error_message = format!(
-            "Failed to download repository: HTTP Status {}",
-            response.status()
+            "Failed to download repository: HTTP Status {}\nHeaders:\n{}\nBody:\n\t{}",
+            status_code, headers, body
         );
+
+        // Emit the detailed error to stderr and log
         eprintln!("{}", error_message);
+        log::error!("{}", error_message);
+
+        std::process::exit(1);
     }
 
     Ok(())
