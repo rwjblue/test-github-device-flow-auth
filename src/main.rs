@@ -7,6 +7,7 @@ use std::io::Write;
 mod errors;
 mod github_device_flow;
 mod keychain;
+mod utils;
 
 use errors::DeviceFlowError;
 use github_device_flow::get_github_token;
@@ -72,29 +73,10 @@ fn main() -> Result<(), DeviceFlowError> {
 
         println!("Repository zip file has been saved as downloaded_repo.tar.gz.");
     } else {
-        // If the status code indicates an error, print the status code, error message, headers, and body
-        let status_code = response.status();
-        let headers = response
-            .headers()
-            .iter()
-            .map(|(k, v)| format!("\t{}: {:?}", k, v))
-            .collect::<Vec<String>>()
-            .join("\n");
-
-        // Attempt to read the response body. Note: This consumes the response.
-        let body = response
-            .text()
-            .unwrap_or_else(|_| "Failed to read body".into());
-
-        let error_message = format!(
-            "Failed to download repository: HTTP Status {}\nHeaders:\n{}\nBody:\n\t{}",
-            status_code, headers, body
-        );
+        utils::log_failed_request(response);
 
         // Emit the detailed error to stderr and log
-        eprintln!("{}", error_message);
-        log::error!("{}", error_message);
-
+        eprintln!("Download failed!");
         std::process::exit(1);
     }
 
