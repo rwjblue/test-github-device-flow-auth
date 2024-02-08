@@ -20,7 +20,8 @@ use super::keychain::{get_password, save_password};
 const GITHUB_DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
 const GITHUB_TOKEN_SCOPE: &str = "repo";
-const CLIENT_ID: &str = "Iv1.d2cfa8999c68b819";
+//const CLIENT_ID: &str = "Iv1.d2cfa8999c68b819";  // LI internal app
+const CLIENT_ID: &str = "Iv1.da140951097b6f6a";    // rwjblue (public) app
 
 #[derive(Debug, serde::Deserialize)]
 struct DeviceCodeResponse {
