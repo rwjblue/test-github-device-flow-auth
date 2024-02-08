@@ -1,30 +1,16 @@
-macro_rules! create_error_wrapper {
-    ($enum:ident, $($variant:ident($type:ty)),* $(,)?) => {
-        // Define the enum with the specified variants
-        #[derive(Debug)]
-        pub enum $enum {
-            $(
-                $variant($type),
-            )*
-        }
+use thiserror::Error;
 
-        // Implement From trait for each variant
-        $(
-            impl From<$type> for $enum {
-                fn from(err: $type) -> Self {
-                    $enum::$variant(err)
-                }
-            }
-        )*
-    };
-}
-
-create_error_wrapper!(
-    DeviceFlowError,
-    // user errors
+#[derive(Error, Debug)]
+pub enum DeviceFlowError {
+    #[error("An unexpected error occurred: {0}")]
     Other(String),
-    // wrapped user errors
-    IO(std::io::Error),
-    Http(attohttpc::Error),
-    Keyring(keyring::Error),
-);
+
+    #[error("IO error: {0}")]
+    IO(#[from] std::io::Error),
+
+    #[error("HTTP error: {0}")]
+    Http(#[from] attohttpc::Error),
+
+    #[error("Keyring error: {0}")]
+    Keyring(#[from] keyring::Error),
+}

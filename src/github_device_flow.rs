@@ -160,7 +160,10 @@ fn poll_for_token(device_code_response: DeviceCodeResponse) -> Result<String, De
                 }
 
                 Some(error) => {
-                    return Err(format!("Failed to get token: {}", error).into());
+                    return Err(DeviceFlowError::Other(format!(
+                        "Failed to get token: {}",
+                        error
+                    )));
                 }
                 None => {
                     return Err(DeviceFlowError::Other("Failed to get token".into()));
