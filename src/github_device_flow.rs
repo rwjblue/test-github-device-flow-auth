@@ -21,7 +21,7 @@ const GITHUB_DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
 const GITHUB_TOKEN_SCOPE: &str = "repo";
 //const CLIENT_ID: &str = "Iv1.d2cfa8999c68b819";  // LI internal app
-const CLIENT_ID: &str = "Iv1.da140951097b6f6a";    // rwjblue (public) app
+const CLIENT_ID: &str = "Iv1.da140951097b6f6a"; // rwjblue (public) app
 
 #[derive(Debug, serde::Deserialize)]
 struct DeviceCodeResponse {
@@ -49,6 +49,13 @@ struct TokenPollRequest {
     client_id: String,
     device_code: String,
     grant_type: String,
+}
+
+/// This struct is used to deserialize the response from the GitHub API
+/// for GET /user
+#[derive(serde::Deserialize, Debug)]
+struct GithubUser {
+    login: String,
 }
 
 pub fn get_github_token() -> Result<String, DeviceFlowError> {
@@ -116,8 +123,9 @@ pub fn create_github_token() -> Result<String, DeviceFlowError> {
     }
 
     let token = poll_for_token(device_code_response)?;
+    let username = get_username(&token)?;
 
-    save_password(token)
+    save_password(username, token)
 }
 
 fn poll_for_token(device_code_response: DeviceCodeResponse) -> Result<String, DeviceFlowError> {
@@ -181,4 +189,22 @@ fn poll_for_token(device_code_response: DeviceCodeResponse) -> Result<String, De
             return Err(DeviceFlowError::Other("Failed to poll for token".into()));
         }
     }
+}
+
+fn get_username(token: &str) -> Result<String, DeviceFlowError> {
+    let response = attohttpc::get("https://api.github.com/user")
+        .header("Authorization", format!("token {}", token))
+        .header("User-Agent", "test-github-device-flow/0.1.0")
+        .header("Accept", "application/vnd.github+json")
+        .send()?;
+
+    if response.status() != StatusCode::OK {
+        let error_message = super::utils::log_failed_request(response);
+
+        return Err(DeviceFlowError::Other(error_message));
+    }
+
+    let user: GithubUser = response.json()?;
+
+    Ok(user.login)
 }

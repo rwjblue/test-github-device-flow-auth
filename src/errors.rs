@@ -13,4 +13,13 @@ pub enum DeviceFlowError {
 
     #[error("Keyring error: {0}")]
     Keyring(#[from] keyring::Error),
+
+    #[error("Yaml parsing error: {0}")]
+    Yaml(#[from] serde_yaml::Error),
+
+    #[error("Could not find the home directory")]
+    HomeDirNotFound(),
+
+    #[error("Config file not found: {0}")]
+    MissingConfigFile(String),
 }

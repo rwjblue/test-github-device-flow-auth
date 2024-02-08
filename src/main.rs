@@ -4,6 +4,7 @@ use is_terminal::IsTerminal;
 use std::fs::File;
 use std::io::Write;
 
+mod config;
 mod errors;
 mod github_device_flow;
 mod keychain;

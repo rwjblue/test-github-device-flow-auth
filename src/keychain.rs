@@ -1,3 +1,4 @@
+use super::config::Config;
 use super::errors::DeviceFlowError;
 
 #[cfg(debug_assertions)]
@@ -8,7 +9,7 @@ use keyring::Entry;
 
 pub fn get_password() -> Result<String, DeviceFlowError> {
     let service = "test-github-device-flow";
-    let username = "github_token";
+    let username = Config::load()?.user;
 
     #[cfg(debug_assertions)]
     {
@@ -17,7 +18,7 @@ pub fn get_password() -> Result<String, DeviceFlowError> {
             .args([
                 "find-generic-password",
                 "-a",
-                username,
+                &username,
                 "-s",
                 &service,
                 "-w",
@@ -37,7 +38,7 @@ pub fn get_password() -> Result<String, DeviceFlowError> {
     #[cfg(not(debug_assertions))]
     {
         let service = format!("{}:release", service);
-        let entry = Entry::new(&service, username)?;
+        let entry = Entry::new(&service, &username)?;
 
         match entry.get_password() {
             Ok(token) => Ok(token),
@@ -46,8 +47,7 @@ pub fn get_password() -> Result<String, DeviceFlowError> {
     }
 }
 
-pub fn save_password(token: String) -> Result<String, DeviceFlowError> {
-    let username = "github_token";
+pub fn save_password(username: String, token: String) -> Result<String, DeviceFlowError> {
     let service = "test-github-device-flow";
 
     #[cfg(debug_assertions)]
@@ -58,7 +58,7 @@ pub fn save_password(token: String) -> Result<String, DeviceFlowError> {
             .args([
                 "add-generic-password",
                 "-a",
-                username,
+                &username,
                 "-s",
                 &service,
                 "-w",
@@ -68,22 +68,25 @@ pub fn save_password(token: String) -> Result<String, DeviceFlowError> {
             .output()
             .map_err(|e| DeviceFlowError::Other(e.to_string()))?;
 
-        if output.status.success() {
-            Ok(token)
-        } else {
-            Err(DeviceFlowError::Other(
+        if !output.status.success() {
+            return Err(DeviceFlowError::Other(
                 String::from_utf8_lossy(&output.stderr).trim().to_string(),
-            ))
+            ));
         }
     }
 
     #[cfg(not(debug_assertions))]
     {
         let service = format!("{}:release", service);
-        let entry = Entry::new(&service, username)?;
+        let entry = Entry::new(&service, &username)?;
 
         entry.set_password(&token)?;
 
         Ok(token)
     }
+
+    let config = Config { user: username };
+    config.save()?;
+
+    Ok(token)
 }
