@@ -17,6 +17,27 @@ and is not intended for production use.
 - Includes a configurable setup through YAML files for easy adaptation and
   testing of different scenarios.
 
+## Device Flow Overview
+
+The way the GitHub device flow system works is _basically_ that you create a
+GitHub App that has "Device Flow" enabled on it. That provides you with a
+client ID that can be used for API requests (e.g. the device flow).
+
+The high level overview of that device login flow is:
+
+- `POST https://github.com//login/device/code` -- This receives the client ID
+  for your GitHub App, and provides you with a "device code" and a verification
+  URL
+- Provide the device code to the user (so that they can finish the
+  authorization in later steps)
+- Launch a web browser to the provided verification URL
+- The user fills in the device code in their browser
+- While waiting for the user to fill in their browser, the binary polls
+  `https://github.com/login/oauth/access_token` (providing it the client ID and
+  the device ID)
+- Once the user completes the auth in the browser, the polling endpoint returns
+  the token to the user
+
 ## Requirements
 
 In order for this to function, you must have a basic GitHub App installed into
