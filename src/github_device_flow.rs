@@ -12,10 +12,10 @@
 //!
 
 use attohttpc::StatusCode;
-use keyring::Entry;
 use std::{thread, time::Duration};
 
-use crate::errors::DeviceFlowError;
+use super::errors::DeviceFlowError;
+use super::keychain::{get_password, save_password};
 
 const GITHUB_DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 const GITHUB_TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
@@ -48,6 +48,13 @@ struct TokenPollRequest {
     client_id: String,
     device_code: String,
     grant_type: String,
+}
+
+pub fn get_github_token() -> Result<String, DeviceFlowError> {
+    match get_password() {
+        Ok(token) => Ok(token),
+        Err(_) => create_github_token(),
+    }
 }
 
 /// Initiates the GitHub device flow to obtain an access token.
@@ -109,7 +116,7 @@ pub fn create_github_token() -> Result<String, DeviceFlowError> {
 
     let token = poll_for_token(device_code_response)?;
 
-    save_token(token)
+    save_password(token)
 }
 
 fn poll_for_token(device_code_response: DeviceCodeResponse) -> Result<String, DeviceFlowError> {
@@ -173,25 +180,4 @@ fn poll_for_token(device_code_response: DeviceCodeResponse) -> Result<String, De
             return Err(DeviceFlowError::Other("Failed to poll for token".into()));
         }
     }
-}
-
-pub fn get_github_token() -> Result<String, DeviceFlowError> {
-    let service = "test-github-device-flow";
-    let username = "github_token";
-    let entry = Entry::new(service, username)?;
-
-    match entry.get_password() {
-        Ok(token) => Ok(token),
-        _ => create_github_token(),
-    }
-}
-
-pub fn save_token(token: String) -> Result<String, DeviceFlowError> {
-    let service = "test-github-device-flow";
-    let username = "github_token";
-    let entry = Entry::new(service, username)?;
-
-    entry.set_password(&token)?;
-
-    Ok(token)
 }

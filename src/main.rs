@@ -6,6 +6,8 @@ use std::io::Write;
 
 mod errors;
 mod github_device_flow;
+mod keychain;
+
 use errors::DeviceFlowError;
 use github_device_flow::get_github_token;
 
