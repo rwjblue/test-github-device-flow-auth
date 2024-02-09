@@ -19,7 +19,11 @@ is-terminal = "0.4.10"
 webbrowser = "0.8.12"
 log = "0.4.20"
 env_logger = "0.11.1"
-keyring = "2.3.2"
+# Conditional dependency on `keyring` for non-macOS platforms
+keyring = { version = "2.3.2", optional = true }
 thiserror = "1.0.56"
 dirs = "5.0.1"
 serde_yaml = "0.9.31"
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+keyring = "2.3.2"

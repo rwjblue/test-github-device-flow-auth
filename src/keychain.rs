@@ -1,17 +1,19 @@
 use super::config::Config;
 use super::errors::DeviceFlowError;
 
-#[cfg(debug_assertions)]
+// Import `Command` for macOS-specific functionality
+#[cfg(target_os = "macos")]
 use std::process::Command;
 
-#[cfg(not(debug_assertions))]
+// Use `Entry` from `keyring` for non-macOS platforms
+#[cfg(not(target_os = "macos"))]
 use keyring::Entry;
 
 pub fn get_password() -> Result<String, DeviceFlowError> {
     let service = "test-github-device-flow";
     let username = Config::load()?.user;
 
-    #[cfg(debug_assertions)]
+    #[cfg(target_os = "macos")]
     {
         let service = format!("{}:debug", service);
         let output = Command::new("security")
@@ -35,7 +37,7 @@ pub fn get_password() -> Result<String, DeviceFlowError> {
         }
     }
 
-    #[cfg(not(debug_assertions))]
+    #[cfg(not(target_os = "macos"))]
     {
         let service = format!("{}:release", service);
         let entry = Entry::new(&service, &username)?;
@@ -50,7 +52,7 @@ pub fn get_password() -> Result<String, DeviceFlowError> {
 pub fn save_password(username: String, token: String) -> Result<String, DeviceFlowError> {
     let service = "test-github-device-flow";
 
-    #[cfg(debug_assertions)]
+    #[cfg(target_os = "macos")]
     {
         let service = format!("{}:debug", service);
 
@@ -75,7 +77,7 @@ pub fn save_password(username: String, token: String) -> Result<String, DeviceFl
         }
     }
 
-    #[cfg(not(debug_assertions))]
+    #[cfg(not(target_os = "macos"))]
     {
         let service = format!("{}:release", service);
         let entry = Entry::new(&service, &username)?;

@@ -11,6 +11,7 @@ pub enum DeviceFlowError {
     #[error("HTTP error: {0}")]
     Http(#[from] attohttpc::Error),
 
+    #[cfg(not(target_os = "macos"))]
     #[error("Keyring error: {0}")]
     Keyring(#[from] keyring::Error),
 
