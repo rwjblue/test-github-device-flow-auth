@@ -83,8 +83,6 @@ pub fn save_password(username: String, token: String) -> Result<String, DeviceFl
         let entry = Entry::new(&service, &username)?;
 
         entry.set_password(&token)?;
-
-        Ok(token)
     }
 
     let config = Config { user: username };
